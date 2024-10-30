@@ -27,17 +27,24 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web-services'
-	implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
-	compileOnly 'org.projectlombok:lombok'
 	implementation 'mysql:mysql-connector-java'
 	implementation 'org.projectlombok:lombok' // Optional: Lombok 사용 시 추가
-	annotationProcessor 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'mysql:mysql-connector-java'
-	runtimeOnly 'com.mysql:mysql-connector-j'
+	implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+
+	implementation 'javax.persistence:javax.persistence-api:2.2' // Java EE dependency
+	implementation 'org.hibernate:hibernate-core:5.4.32.Final'
+
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.1' // Jackson Databind
+	implementation 'com.fasterxml.jackson.core:jackson-core:2.14.1'   // Jackson Core (필요 시 추가)
+	implementation 'com.fasterxml.jackson.core:jackson-annotations:2.14.1' // Jackson Annotations (필요 시 추가)
+
+	compileOnly 'org.projectlombok:lombok:1.18.24'
+	annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
 }
 
 tasks.named('test') {

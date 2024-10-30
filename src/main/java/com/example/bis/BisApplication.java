@@ -9,5 +9,4 @@ public class BisApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BisApplication.class, args);
 	}
-
 }
