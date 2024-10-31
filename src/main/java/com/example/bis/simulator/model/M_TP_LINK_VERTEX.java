@@ -1,6 +1,9 @@
 package com.example.bis.simulator.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -8,6 +11,8 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "M_TP_LINK_VERTEX")
+@Data
+@NoArgsConstructor // 기본 생성자 생성
 public class M_TP_LINK_VERTEX implements Serializable {
 
     @Id
@@ -37,71 +42,6 @@ public class M_TP_LINK_VERTEX implements Serializable {
     @Column(name = "SYNC_DT")
     @Temporal(TemporalType.TIMESTAMP)
     private Date syncDt;
-
-    // Getters and Setters
-    public String getLinkId() {
-        return linkId;
-    }
-
-    public void setLinkId(String linkId) {
-        this.linkId = linkId;
-    }
-
-    public Integer getSqno() {
-        return sqno;
-    }
-
-    public void setSqno(Integer sqno) {
-        this.sqno = sqno;
-    }
-
-    public BigDecimal getXcord() {
-        return xcord;
-    }
-
-    public void setXcord(BigDecimal xcord) {
-        this.xcord = xcord;
-    }
-
-    public BigDecimal getYcord() {
-        return ycord;
-    }
-
-    public void setYcord(BigDecimal ycord) {
-        this.ycord = ycord;
-    }
-
-    public Integer getVerId() {
-        return verId;
-    }
-
-    public void setVerId(Integer verId) {
-        this.verId = verId;
-    }
-
-    public Date getUpdDt() {
-        return updDt;
-    }
-
-    public void setUpdDt(Date updDt) {
-        this.updDt = updDt;
-    }
-
-    public String getUpdusrId() {
-        return updusrId;
-    }
-
-    public void setUpdusrId(String updusrId) {
-        this.updusrId = updusrId;
-    }
-
-    public Date getSyncDt() {
-        return syncDt;
-    }
-
-    public void setSyncDt(Date syncDt) {
-        this.syncDt = syncDt;
-    }
 
     // equals() 및 hashCode() 메서드 구현
     @Override

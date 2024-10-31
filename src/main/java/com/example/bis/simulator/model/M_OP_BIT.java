@@ -67,4 +67,6 @@ public class M_OP_BIT {
 
     @Column(name = "DPRTR_PLNND_PRVSN_YN", length = 1)
     private String departurePlannedProvisionYn;
+
+    // 기본 생성자는 Lombok에 의해 자동 생성됨
 }

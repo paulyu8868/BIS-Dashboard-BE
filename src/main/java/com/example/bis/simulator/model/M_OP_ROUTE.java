@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "M_OP_ROUTE")
-@Data  // Lombok annotation to generate getters, setters, toString, equals, and hashCode methods
+@Data
 public class M_OP_ROUTE {
 
     @Id
@@ -131,4 +131,3 @@ public class M_OP_ROUTE {
     @Column(name = "MYBI_ROUTE_ID", length = 20)
     private String mybiRouteId;
 }
-

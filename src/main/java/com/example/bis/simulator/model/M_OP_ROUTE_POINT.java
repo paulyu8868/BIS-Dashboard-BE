@@ -60,4 +60,3 @@ public class M_OP_ROUTE_POINT {
     @Column(name = "UPDUSR_ID", length = 10)
     private String updateUserId;
 }
-

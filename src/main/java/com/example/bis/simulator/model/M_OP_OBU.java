@@ -1,10 +1,14 @@
 package com.example.bis.simulator.model;
 
+import lombok.Data;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
 @Table(name = "M_OP_OBU")
+@Data  // Lombok annotation to generate getters, setters, toString, equals, and hashCode methods
 public class M_OP_OBU {
 
     @Id
@@ -39,81 +43,5 @@ public class M_OP_OBU {
     @Temporal(TemporalType.TIMESTAMP)
     private Date updDt;
 
-    // 기본 생성자
-    public M_OP_OBU() {
-    }
-
-    // Getters와 Setters
-    public String getObuId() {
-        return obuId;
-    }
-
-    public void setObuId(String obuId) {
-        this.obuId = obuId;
-    }
-
-    public Integer getBusId() {
-        return busId;
-    }
-
-    public void setBusId(Integer busId) {
-        this.busId = busId;
-    }
-
-    public String getMnfctCoNm() {
-        return mnfctCoNm;
-    }
-
-    public void setMnfctCoNm(String mnfctCoNm) {
-        this.mnfctCoNm = mnfctCoNm;
-    }
-
-    public String getPrdctNo() {
-        return prdctNo;
-    }
-
-    public void setPrdctNo(String prdctNo) {
-        this.prdctNo = prdctNo;
-    }
-
-    public Date getBuyYmd() {
-        return buyYmd;
-    }
-
-    public void setBuyYmd(Date buyYmd) {
-        this.buyYmd = buyYmd;
-    }
-
-    public Date getInfoUpdDt() {
-        return infoUpdDt;
-    }
-
-    public void setInfoUpdDt(Date infoUpdDt) {
-        this.infoUpdDt = infoUpdDt;
-    }
-
-    public String getUseYn() {
-        return useYn;
-    }
-
-    public void setUseYn(String useYn) {
-        this.useYn = useYn;
-    }
-
-    public Date getCrtDt() {
-        return crtDt;
-    }
-
-    public void setCrtDt(Date crtDt) {
-        this.crtDt = crtDt;
-    }
-
-    public Date getUpdDt() {
-        return updDt;
-    }
-
-    public void setUpdDt(Date updDt) {
-        this.updDt = updDt;
-    }
+    // 기본 생성자는 Lombok에 의해 자동 생성됨
 }
-

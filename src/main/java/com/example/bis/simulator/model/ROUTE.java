@@ -15,5 +15,4 @@ public class ROUTE {
 
     @Column(name = "number", nullable = false)
     private Integer number;
-
 }

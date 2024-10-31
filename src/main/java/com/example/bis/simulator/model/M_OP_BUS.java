@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "M_OP_BUS")
-@Data
+@Data  // Lombok annotation to generate getters, setters, toString, equals, and hashCode methods
 public class M_OP_BUS {
 
     @Id
@@ -75,4 +75,6 @@ public class M_OP_BUS {
 
     @Column(name = "LFBUS_YN", length = 1)
     private String lowFloorBusYn;
+
+    // 기본 생성자는 Lombok에 의해 자동 생성됨
 }

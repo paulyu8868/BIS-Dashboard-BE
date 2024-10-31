@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "M_TP_BSTP")
-@Data  // Lombok annotation to generate getters, setters, and other methods
+@Data
 public class M_TP_BSTP {
 
     @Id
