@@ -12,34 +12,34 @@ import java.util.Date;
 public class M_OP_OBU {
 
     @Id
-    @Column(name = "obu_id", length = 10)
+    @Column(name = "OBU_ID", length = 10)
     private String obuId;
 
-    @Column(name = "bus_id")
+    @Column(name = "BUS_ID")
     private Integer busId;
 
-    @Column(name = "mnfct_co_nm", length = 30)
+    @Column(name = "MNFCT_CO_NM", length = 30)
     private String mnfctCoNm;
 
-    @Column(name = "prdct_no", length = 18)
+    @Column(name = "PRDCT_NO", length = 18)
     private String prdctNo;
 
-    @Column(name = "buy_ymd")
+    @Column(name = "BUY_YMD")
     @Temporal(TemporalType.DATE)
     private Date buyYmd;
 
-    @Column(name = "info_upd_dt")
+    @Column(name = "INFO_UPD_DT")
     @Temporal(TemporalType.TIMESTAMP)
     private Date infoUpdDt;
 
-    @Column(name = "use_yn", length = 1)
+    @Column(name = "USE_YN", length = 1)
     private String useYn;
 
-    @Column(name = "crt_dt")
+    @Column(name = "CRT_DT")
     @Temporal(TemporalType.TIMESTAMP)
     private Date crtDt;
 
-    @Column(name = "upd_dt")
+    @Column(name = "UPD_DT")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updDt;
 
