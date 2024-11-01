@@ -36,29 +36,32 @@ public class BusSimulatorService {
     private BigDecimal previousYCoord;
     private LocalDateTime previousTime;
 
-    public void simulateBusMovement(String busId, String routeId) {
+    public BusDataDTO simulateBusMovement(String busId, String routeId) {
         M_OP_OBU obu = obuRepository.findById(Integer.valueOf(busId))
                 .orElseThrow(() -> new RuntimeException("버스를 찾을 수 없습니다."));
 
         M_OP_ROUTE route = routeRepository.findById(Integer.valueOf(routeId))
                 .orElseThrow(() -> new RuntimeException("노선 정보를 찾을 수 없습니다."));
 
+        // 노드 정보 가져오기
+        M_TP_NODE presttNode = nodeRepository.findById(String.valueOf(3070012500L))
+                .orElseThrow(() -> new RuntimeException("이전 정류장 노드를 찾을 수 없습니다."));
+        M_TP_NODE nextsttNode = nodeRepository.findById(String.valueOf(3070012600L))
+                .orElseThrow(() -> new RuntimeException("다음 정류장 노드를 찾을 수 없습니다."));
+
         BusDataDTO busData = new BusDataDTO();
 
         // 현재 날짜 및 시간 설정
         String currentDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         busData.setColDate(currentDate);
-
         busData.setBusId(busId);
 
-        // 임시 정류장 ID 및 위치 설정
-        String presttId = "22222";
-        String nextsttId = "33333";
-        busData.setPresttId(presttId);
-        busData.setNextsttId(nextsttId);
+        // 정류장 ID 및 위치 설정
+        busData.setPresttId(presttNode.getNodeId().toString());
+        busData.setNextsttId(nextsttNode.getNodeId().toString());
 
-        BigDecimal xCoord = new BigDecimal(126.57486667);
-        BigDecimal yCoord = new BigDecimal(35.94681667);
+        BigDecimal xCoord = presttNode.getXcord();
+        BigDecimal yCoord = presttNode.getYcord();
 
         // 위도와 경도 저장
         busData.setLongitude(xCoord.doubleValue());
@@ -69,13 +72,16 @@ public class BusSimulatorService {
         busData.setSpeed(speed);
 
         // 이벤트 코드 계산
-        String eventCode = calculateEventCode(presttId, nextsttId, xCoord, yCoord);
+        String eventCode = calculateEventCode(presttNode.getNodeId().toString(), nextsttNode.getNodeId().toString(), xCoord, yCoord);
         busData.setEventCode(eventCode);
 
-        // 방위각 (임의 값 설정)
-        busData.setAzimuth(90.0);
+        // 방위각 고정 (0으로 설정)
+        busData.setAzimuth(0.0);
 
+        // 서버에 데이터 전송
         sendDataToCollectionServer(busData);
+
+        return busData; // 처리된 DTO 반환
     }
 
     private Double calculateSpeed(BigDecimal xCoord, BigDecimal yCoord) {
@@ -106,8 +112,8 @@ public class BusSimulatorService {
     }
 
     private String calculateEventCode(String presttId, String nextsttId, BigDecimal xCoord, BigDecimal yCoord) {
-        M_TP_NODE prevNode = nodeRepository.findById(Integer.valueOf(presttId)).orElse(null);
-        M_TP_NODE nextNode = nodeRepository.findById(Integer.valueOf(nextsttId)).orElse(null);
+        M_TP_NODE prevNode = nodeRepository.findById(String.valueOf(Long.valueOf(presttId))).orElse(null);
+        M_TP_NODE nextNode = nodeRepository.findById(String.valueOf(Long.valueOf(nextsttId))).orElse(null);
 
         if (prevNode != null && nextNode != null) {
             double distanceToPrev = calculateDistance(xCoord, yCoord, prevNode.getXcord(), prevNode.getYcord());
