@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>버스 모니터링 시스템</title>
+  <link rel="stylesheet" th:href="@{/static/simulator.css}">
+</head>
+<body>
+<div class="control-panel">
+  <div class="input-section">
+    <label for="obuId">버스 ID (OBU_ID)</label>
+    <input type="text" id="obuId" placeholder="OBU_ID를 입력하세요" class="input-field">
+  </div>
+
+  <div class="route-toggle">
+    <div class="route-title">노선 선택</div>
+    <div class="route-buttons">
+      <label class="route-label">
+        <input type="radio" name="routeNumber" value="1">
+        <span class="route-btn">1번</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="button-section">
+    <button id="startMonitoring" class="primary-btn">모니터링 시작</button>
+    <button id="reset" class="secondary-btn">초기화</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<!-- 카카오맵 API를 한 번만 로드 -->
+<script th:inline="javascript">
+  // 컨트롤러에서 전달받은 API 키
+  const kakaoMapKey = [[${kakaoMapsApiKey}]];
+</script>
+<script type="text/javascript" th:src="|//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapsApiKey}&autoload=false|"></script>
+<script th:src="@{/static/js/simulator.js}"></script>
+</body>
+</html>
