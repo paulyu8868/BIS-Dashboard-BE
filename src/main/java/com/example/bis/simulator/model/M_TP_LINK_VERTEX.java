@@ -13,6 +13,7 @@ import java.util.Objects;
 @Table(name = "M_TP_LINK_VERTEX")
 @Data
 @NoArgsConstructor // 기본 생성자 생성
+
 public class M_TP_LINK_VERTEX implements Serializable {
 
     @Id
