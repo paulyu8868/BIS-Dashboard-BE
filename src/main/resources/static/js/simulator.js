@@ -146,21 +146,23 @@ async function displayBusStops(routeNumber) {
         });
 
         // 노선 라인 그리기
-        routeLine = new kakao.maps.Polyline({
-            path: linePath,
-            strokeWeight: 3,
-            strokeColor: '#3B89E6',
-            strokeOpacity: 0.7,
-            strokeStyle: 'solid'
-        });
+        if (linePath.length > 0) {
+            routeLine = new kakao.maps.Polyline({
+                path: linePath,
+                strokeWeight: 3,
+                strokeColor: '#3B89E6',
+                strokeOpacity: 0.7,
+                strokeStyle: 'solid'
+            });
 
-        routeLine.setMap(map);
+            routeLine.setMap(map);
 
-        // 지도 영역 설정
-        const bounds = new kakao.maps.LatLngBounds();
-        bounds.extend(new kakao.maps.LatLng(latMin, lngMin));
-        bounds.extend(new kakao.maps.LatLng(latMax, lngMax));
-        map.setBounds(bounds);
+            // 지도 영역 설정
+            const bounds = new kakao.maps.LatLngBounds();
+            bounds.extend(new kakao.maps.LatLng(latMin, lngMin));
+            bounds.extend(new kakao.maps.LatLng(latMax, lngMax));
+            map.setBounds(bounds);
+        }
 
     } catch (error) {
         console.error('노선 표시 실패:', error);
@@ -168,6 +170,23 @@ async function displayBusStops(routeNumber) {
     }
 }
 
+// 정류장 및 노선 초기화 함수
+function resetBusStops() {
+    // 정류장 마커 제거
+    if (stopMarkers && stopMarkers.length > 0) {
+        stopMarkers.forEach(marker => {
+            if (marker.marker) marker.marker.setMap(null);
+            if (marker.infowindow) marker.infowindow.setMap(null);
+        });
+        stopMarkers = [];
+    }
+
+    // 노선 라인 제거
+    if (routeLine) {
+        routeLine.setMap(null);
+        routeLine = null;
+    }
+}
 
 // 버스 위치 업데이트
 async function updateBusLocation(obuId) {
@@ -217,49 +236,87 @@ function stopMonitoring() {
     }
 }
 
-// 정류장 및 노선 초기화
-function resetBusStops() {
-    stopMarkers.forEach(marker => {
-        marker.marker.setMap(null);
-        marker.infowindow.setMap(null);
-    });
-    stopMarkers = [];
 
-    if (routeLine) {
-        routeLine.setMap(null);
-        routeLine = null;
+
+// 운행 시작
+async function startOperation() {
+    const obuId = document.getElementById('obuId').value;
+    const routeRadio = document.querySelector('input[name="routeNumber"]:checked');
+
+    if (!obuId || !routeRadio) {
+        alert('버스 ID와 노선을 선택해주세요.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/simulator/operation/start?obuId=${obuId}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            throw new Error('운행 시작 처리에 실패했습니다.');
+        }
+
+        alert('운행이 시작되었습니다.');
+        startMonitoring();  // 실시간 모니터링 시작
+    } catch (error) {
+        console.error('운행 시작 실패:', error);
+        alert(error.message);
     }
 }
 
-// 전체 초기화
-function resetMonitoring() {
-    stopMonitoring();
-    resetBusStops();
+// 전체 초기화 (기존 stopRouteOperation 함수명 변경)
+async function stopRouteOperation() {
+    const routeRadio = document.querySelector('input[name="routeNumber"]:checked');
 
-    busMarkers.forEach(marker => marker.setMap(null));
-    busMarkers.clear();
+    if (!routeRadio) {
+        alert('노선을 선택해주세요.');
+        return;
+    }
 
-    document.getElementById('obuId').value = '';
-    document.querySelectorAll('input[name="routeNumber"]').forEach(radio => {
-        radio.checked = false;
-    });
+    const routeId = ROUTE_ID_MAP[routeRadio.value];
+
+    try {
+        const response = await fetch(`/api/simulator/operation/stop-route?routeId=${routeId}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            throw new Error('운행 종료 처리에 실패했습니다.');
+        }
+
+        // 모니터링 중지 및 화면 초기화
+        stopMonitoring();
+        resetBusStops();
+
+        // 버스 마커 제거
+        if (busMarkers) {
+            busMarkers.forEach(marker => marker.setMap(null));
+            busMarkers.clear();
+        }
+
+        // 입력 필드 초기화
+        document.getElementById('obuId').value = '';
+        routeRadio.checked = false;
+
+        alert('노선 운행이 종료되었습니다.');
+    } catch (error) {
+        console.error('운행 종료 실패:', error);
+        alert(error.message);
+    }
 }
 
-// 이벤트 리스너
-window.onload = async function() {
-    try {
-        await initMap();
+
+
+// 이벤트 리스너 설정
+document.addEventListener('DOMContentLoaded', () => {
+    initMap().then(() => {
+        document.getElementById('startOperation').addEventListener('click', startOperation);
+        document.getElementById('stopOperation').addEventListener('click', stopRouteOperation);
 
         // 노선 선택 이벤트
         document.querySelectorAll('input[name="routeNumber"]').forEach(radio => {
             radio.addEventListener('change', () => displayBusStops(radio.value));
         });
-
-        // 버튼 이벤트
-        document.getElementById('startMonitoring').addEventListener('click', startMonitoring);
-        document.getElementById('reset').addEventListener('click', resetMonitoring);
-    } catch (error) {
-        console.error('초기화 실패:', error);
-        alert('지도를 초기화하는데 실패했습니다.');
-    }
-};
+    });
+});
