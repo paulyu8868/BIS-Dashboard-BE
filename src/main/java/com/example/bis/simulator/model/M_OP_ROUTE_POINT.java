@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "M_OP_ROUTE_POINT")
 @Data
+@IdClass(RoutePointId.class)
 public class M_OP_ROUTE_POINT {
 
     @Id
