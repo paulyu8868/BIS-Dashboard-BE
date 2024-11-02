@@ -33,7 +33,7 @@ public interface RouteRepository extends JpaRepository<M_OP_ROUTE_POINT, RoutePo
 
     // 모든 VERTEX 조회
     // 버텍스 순서 = (지점 포인트 순서,버텍스 순서)로 정렬
-    @Query("SELECT DISTINCT new com.example.bis.simulator.dto.VertexDTO(" +
+    @Query("SELECT new com.example.bis.simulator.dto.VertexDTO(" +
             "bs.linkId, rp.pointSqno, v.sqno, v.xcord, v.ycord) " +
             "FROM M_OP_ROUTE_POINT rp " +
             "JOIN M_TP_BSTP bs ON rp.pointId = bs.bstpId " +
