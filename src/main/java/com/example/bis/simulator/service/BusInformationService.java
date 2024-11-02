@@ -20,7 +20,7 @@ public class BusInformationService {
         M_OP_OBU obu = entityManager.find(M_OP_OBU.class, obuId);
         if (obu != null && obu.getBusId() != null) {
             // BUS 테이블에서 busId로 조회
-            System.out.println("BUS: " + bus);
+            M_OP_BUS bus = entityManager.find(M_OP_BUS.class, obu.getBusId());
 
             if (bus != null) {
                 // DTO에 필요한 정보 설정
