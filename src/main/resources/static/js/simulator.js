@@ -78,18 +78,7 @@ function createBusStopMarker(position, name) {
     return {marker, infowindow};
 }
 
-// 버스 마커 생성
-function createBusMarker(position, obuId) {
-    const content = document.createElement('div');
-    content.className = 'bus-marker';
-    content.textContent = obuId;
 
-    return new kakao.maps.CustomOverlay({
-        position: position,
-        content: content,
-        zIndex: 3
-    });
-}
 
 // 정류장 정보 가져오기
 async function getBusStops(routeId) {
@@ -103,19 +92,50 @@ async function getBusStops(routeId) {
     }
 }
 
-// 버스 위치 정보 가져오기
-async function getBusLocation(obuId, routeId) {
+// 노선의 모든 노드 정보 가져오기
+async function getRouteNodes(routeId) {
     try {
-        const response = await fetch(`/api/simulator/bus-location?obuId=${obuId}&routeId=${routeId}`);
-        if (!response.ok) throw new Error('버스 위치 정보를 가져오는데 실패했습니다.');
+        const response = await fetch(`/api/simulator/route/${routeId}/nodes`);
+        if (!response.ok) throw new Error('노드 정보를 가져오는데 실패했습니다.');
         return await response.json();
+    } catch (error) {
+        console.error('노드 정보 조회 실패:', error);
+        throw error;
+    }
+}
+
+// 버텍스 정보 가져오기
+async function getRouteVertexes(routeId) {
+    try {
+        const response = await fetch(`/api/simulator/route/${routeId}/vertexes`);
+        if (!response.ok) throw new Error('버텍스 정보를 가져오는데 실패했습니다.');
+        return await response.json();
+    } catch (error) {
+        console.error('버텍스 정보 조회 실패:', error);
+        throw error;
+    }
+}
+
+
+// 모든 버스 위치 정보 가져오기
+async function getAllBusLocation(routeId) {
+    try {
+        const response = await fetch(`/api/simulator/bus-location-all?routeId=${routeId}`);
+        if (!response.ok) {
+            throw new Error('버스 위치 정보를 가져오는데 실패했습니다.');
+        }
+        const data = await response.json();
+        console.log('버스 위치 정보:', data);
+        return data;
     } catch (error) {
         console.error('버스 위치 조회 실패:', error);
         throw error;
     }
 }
 
-// 노선 및 정류장 표시
+
+
+// 정류장 표시 (노선표시 기능과 분리했음)
 async function displayBusStops(routeNumber) {
     try {
         // 기존 정류장 마커와 라인 제거
@@ -146,6 +166,7 @@ async function displayBusStops(routeNumber) {
         });
 
         // 노선 라인 그리기
+        /*
         if (linePath.length > 0) {
             routeLine = new kakao.maps.Polyline({
                 path: linePath,
@@ -164,11 +185,70 @@ async function displayBusStops(routeNumber) {
             map.setBounds(bounds);
         }
 
+         */
+
     } catch (error) {
         console.error('노선 표시 실패:', error);
         alert('노선 정보를 표시하는데 실패했습니다.');
     }
 }
+
+
+async function displayRoute(routeNumber) {
+    try {
+        resetBusStops();
+
+        const routeId = ROUTE_ID_MAP[routeNumber];
+        console.log('ROUTE_ID:', routeId);
+
+        // 버텍스 정보 가져오기
+        const vertexes = await getRouteVertexes(routeId);
+        console.log('버텍스 정보:', vertexes);
+
+        if (!vertexes || vertexes.length === 0) {
+            throw new Error('버텍스 정보가 없습니다.');
+        }
+
+        const linePath = [];
+
+        // 버텍스들이 이미 정류장 순서(pointSqno)와 버텍스 순서(sqno)로 정렬되어 있음
+        vertexes.forEach(vertex => {
+            if (vertex.xcord && vertex.ycord) {
+                const lat = parseFloat(vertex.ycord);
+                const lng = parseFloat(vertex.xcord);
+                const position = new kakao.maps.LatLng(lat, lng);
+                linePath.push(position);
+            }
+        });
+
+        // 노선 라인 그리기
+        if (linePath.length > 0) {
+            routeLine = new kakao.maps.Polyline({
+                path: linePath,
+                strokeWeight: 3,
+                strokeColor: '#3B89E6',
+                strokeOpacity: 0.7,
+                strokeStyle: 'solid'
+            });
+
+            routeLine.setMap(map);
+
+            // 지도 범위 설정
+            const bounds = new kakao.maps.LatLngBounds();
+            linePath.forEach(position => bounds.extend(position));
+            map.setBounds(bounds);
+        }
+
+
+    } catch (error) {
+        console.error('노선 표시 실패:', error);
+        alert('노선 정보를 표시하는데 실패했습니다.');
+    }
+}
+
+
+
+
 
 // 정류장 및 노선 초기화 함수
 function resetBusStops() {
@@ -188,23 +268,34 @@ function resetBusStops() {
     }
 }
 
-// 버스 위치 업데이트
-async function updateBusLocation(obuId) {
+// 모든 버스 위치 업데이트
+async function updateAllBusLocation() {
     try {
-        const routeNumber = document.querySelector('input[name="routeNumber"]:checked').value;
-        const routeId = ROUTE_ID_MAP[routeNumber];
+        const routeRadio = document.querySelector('input[name="routeNumber"]:checked');
+        if (!routeRadio) {
+            console.warn('선택된 노선이 없습니다.');
+            return;
+        }
 
-        const busInfo = await getBusLocation(obuId, routeId);
+        const routeId = ROUTE_ID_MAP[routeRadio.value];
+        console.log('선택된 노선 ID:', routeId);
+
+        const busLocations = await getAllBusLocation(routeId);
+        console.log('조회된 버스 위치:', busLocations);
 
         // 기존 마커 제거
         busMarkers.forEach(marker => marker.setMap(null));
         busMarkers.clear();
 
-        // 새 마커 생성
-        const position = new kakao.maps.LatLng(busInfo.ycord, busInfo.xcord);
-        const marker = createBusMarker(position, busInfo.obuId);
-        marker.setMap(map);
-        busMarkers.set(busInfo.obuId, marker);
+        // 모든 운행 중인 버스의 마커 생성
+        busLocations.forEach(busInfo => {
+            if (busInfo.rungStatus === '1') {
+                const position = new kakao.maps.LatLng(busInfo.ycord, busInfo.xcord);
+                const marker = createBusMarker(position, busInfo.obuId);
+                marker.setMap(map);
+                busMarkers.set(busInfo.obuId, marker);
+            }
+        });
 
     } catch (error) {
         console.error('버스 위치 업데이트 실패:', error);
@@ -213,8 +304,28 @@ async function updateBusLocation(obuId) {
     }
 }
 
+// 버스 마커 스타일 개선
+function createBusMarker(position, obuId) {
+    const content = document.createElement('div');
+    content.className = 'bus-marker';
+    content.style.backgroundColor = '#FF0000';  // 버스 마커 색상
+    content.style.padding = '5px 10px';
+    content.style.borderRadius = '10px';
+    content.style.color = 'white';
+    content.style.fontWeight = 'bold';
+    content.style.fontSize = '12px';
+    content.textContent = `버스 ${obuId}`;
+
+    return new kakao.maps.CustomOverlay({
+        position: position,
+        content: content,
+        yAnchor: 1,
+        zIndex: 3
+    });
+}
+
 // 모니터링 시작
-function startMonitoring() {
+function startMonitoringAll() {
     const obuId = document.getElementById('obuId').value;
     const routeRadio = document.querySelector('input[name="routeNumber"]:checked');
 
@@ -224,8 +335,8 @@ function startMonitoring() {
     }
 
     stopMonitoring();
-    updateBusLocation(obuId);
-    updateInterval = setInterval(() => updateBusLocation(obuId), 3000);
+    updateAllBusLocation(obuId);
+    updateInterval = setInterval(() => updateAllBusLocation(obuId), 3000);
 }
 
 // 모니터링 중지
@@ -248,9 +359,15 @@ async function startOperation() {
         return;
     }
 
+    const routeId = ROUTE_ID_MAP[routeRadio.value];
+
     try {
-        const response = await fetch(`/api/simulator/operation/start?obuId=${obuId}`, {
-            method: 'POST'
+        const response = await fetch('/api/simulator/operation/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `obuId=${encodeURIComponent(obuId)}&routeId=${encodeURIComponent(routeId)}`
         });
 
         if (!response.ok) {
@@ -258,14 +375,14 @@ async function startOperation() {
         }
 
         alert('운행이 시작되었습니다.');
-        startMonitoring();  // 실시간 모니터링 시작
+        startMonitoringAll();  // 실시간 모니터링 시작
     } catch (error) {
         console.error('운행 시작 실패:', error);
         alert(error.message);
     }
 }
 
-// 전체 초기화 (기존 stopRouteOperation 함수명 변경)
+// 운행 종료
 async function stopRouteOperation() {
     const routeRadio = document.querySelector('input[name="routeNumber"]:checked');
 
@@ -276,6 +393,7 @@ async function stopRouteOperation() {
 
     const routeId = ROUTE_ID_MAP[routeRadio.value];
 
+    // 해당 노선 모든 버스 운행 종료
     try {
         const response = await fetch(`/api/simulator/operation/stop-route?routeId=${routeId}`, {
             method: 'POST'
@@ -317,6 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 노선 선택 이벤트
         document.querySelectorAll('input[name="routeNumber"]').forEach(radio => {
             radio.addEventListener('change', () => displayBusStops(radio.value));
+            radio.addEventListener('change', () => displayRoute(radio.value));
         });
     });
 });
