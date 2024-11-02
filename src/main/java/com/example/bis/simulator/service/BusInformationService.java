@@ -18,10 +18,8 @@ public class BusInformationService {
     public Optional<BusInformationDTO> getBusInformationByObuId(String obuId) {
         // OBU 테이블에서 OBU ID로 조회
         M_OP_OBU obu = entityManager.find(M_OP_OBU.class, obuId);
-        System.out.println("M_OP_OBU: " + obu);
         if (obu != null && obu.getBusId() != null) {
             // BUS 테이블에서 busId로 조회
-            M_OP_BUS bus = entityManager.find(M_OP_BUS.class, obu.getBusId());
             System.out.println("BUS: " + bus);
 
             if (bus != null) {
