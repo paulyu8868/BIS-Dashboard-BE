@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class BusLocationService {
 
@@ -18,17 +21,19 @@ public class BusLocationService {
     }
 
     @Transactional(readOnly = true)
-    public BusLocationDTO getBusLocation(String obuId, String routeId) {
-        C_TC_BUS_RUNG busRunning = busRunningRepository
-                .findByObuIdAndRouteId(obuId, routeId)
-                .orElseThrow(() -> new RuntimeException("운행 중인 버스를 찾을 수 없습니다."));
+    public List<BusLocationDTO> getAllBusLocations(String routeId) {
+        List<C_TC_BUS_RUNG> runningBuses = busRunningRepository.findAllRunningBusesByRouteId(routeId);
 
-        return BusLocationDTO.builder()
-                .obuId(busRunning.getObuId())
-                .routeId(busRunning.getRouteId())
-                .xcord(busRunning.getXCord())
-                .ycord(busRunning.getYCord())
-                .rungStatus(busRunning.getRungStatus())
-                .build();
+        return runningBuses.stream()
+                .map(bus -> BusLocationDTO.builder()
+                        .obuId(bus.getObuId())
+                        .routeId(bus.getRouteId())
+                        .xcord(bus.getXCord())
+                        .ycord(bus.getYCord())
+                        .rungStatus(bus.getRungStatus())
+                        .passagePointSqno(bus.getPassagePointSqNo())
+                        .lastUpdateTime(bus.getUpdateDate())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

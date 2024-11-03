@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/simulator")
 public class BusLocationController {
@@ -23,17 +25,19 @@ public class BusLocationController {
         this.busLocationService = busLocationService;
     }
 
-    @GetMapping("/bus-location")
-    public ResponseEntity<BusLocationDTO> getBusLocation(
-            @RequestParam String obuId,
-            @RequestParam String routeId) {
+
+
+    @GetMapping("/bus-location-all")
+    public ResponseEntity<List<BusLocationDTO>> getAllBusLocations(@RequestParam String routeId) {
         try {
-            logger.info("버스 위치 조회 요청 - OBU_ID: {}, ROUTE_ID: {}", obuId, routeId);
-            BusLocationDTO location = busLocationService.getBusLocation(obuId, routeId);
-            return ResponseEntity.ok(location);
+            List<BusLocationDTO> busLocations = busLocationService.getAllBusLocations(routeId);
+            if (busLocations.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(busLocations);
         } catch (Exception e) {
             logger.error("버스 위치 조회 실패", e);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.internalServerError().build();
         }
     }
 }
