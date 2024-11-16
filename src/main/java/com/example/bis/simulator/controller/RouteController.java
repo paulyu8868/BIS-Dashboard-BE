@@ -15,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/simulator")
+@CrossOrigin(origins = "http://localhost:3000")
 public class RouteController { // 노선의 정류장,노드,버텍스 등 조회
 
     private static final Logger logger = LoggerFactory.getLogger(RouteController.class);
