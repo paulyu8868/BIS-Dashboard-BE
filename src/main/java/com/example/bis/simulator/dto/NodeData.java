@@ -1,15 +1,14 @@
 package com.example.bis.simulator.dto;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+
 import java.math.BigDecimal;
 
 @Data
-@Builder
-public class NodeDTO {
+@AllArgsConstructor
+public class NodeData {
     private String nodeId;
-    private String nodeType;
     private BigDecimal xcord;
     private BigDecimal ycord;
-    private Integer pointSqno;  // 노선에서의 순번
 }
