@@ -55,27 +55,28 @@ public class BusSimulatorService {
      * @param routeId 노선 ID
      */
     public void startSimulation(String busId, String routeId) {
-        // 모든 노선 데이터 가져오기
+        if (busId == null || routeId == null) {
+            throw new IllegalArgumentException("버스 ID와 노선 ID는 필수입니다.");
+        }
+
         List<RouteData> routes = routeService.getOptimizedRouteData();
         RouteData selectedRoute = routes.stream()
                 .filter(route -> route.getRouteId().equals(routeId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("해당 노선을 찾을 수 없습니다: " + routeId));
 
-        // 버스 데이터 가져오기
         M_OP_OBU obu = obuRepository.findByBusId(Integer.parseInt(busId));
         if (obu == null) {
             throw new IllegalArgumentException("해당 버스를 찾을 수 없습니다: " + busId);
         }
 
-        // 초기 위치 및 정류장 정보 설정
         BigDecimal initialX = selectedRoute.getBusStops().get(0).getXcord();
         BigDecimal initialY = selectedRoute.getBusStops().get(0).getYcord();
         String arrivalPointId = selectedRoute.getBusStops().get(0).getBusStopId();
 
-        // 초기화
         initializeBusPosition(obu.getObuId(), initialX, initialY, arrivalPointId);
     }
+
 
     /**
      * 특정 OBU ID의 버스를 초기화합니다.
