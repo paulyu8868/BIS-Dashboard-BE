@@ -27,7 +27,10 @@ public class RouteService {
         List<String> routeIds = routeRepository.findTop10RouteIds(PageRequest.of(0, 10));
         List<RouteData> routeDataList = new ArrayList<>();
 
-        for (String routeId : routeIds) {
+        // 노선 번호를 1번부터 순서대로 매핑
+        for (int index = 0; index < routeIds.size(); index++) {
+            String routeId = routeIds.get(index);
+
             // 2. 노선 링크 데이터 조회
             List<M_OP_ROUTE_POINT> nodePoints = routePointRepository.findByRouteIdAndPointDiv(routeId, "0");
             List<String> startNodeIds = new ArrayList<>();
@@ -75,12 +78,12 @@ public class RouteService {
                     ))
                     .collect(Collectors.toList());
 
-            // 4. RouteData 매핑
+            // 4. RouteData 매핑 (노선 이름: "1번 노선", "2번 노선", ...)
             RouteData routeData = new RouteData(
                     routeId,
-                    "Route " + routeId,  // 노선 이름 (예: Route 307000440)
-                    linkDataList,         // 경로 데이터
-                    busStopDataList       // 정류장 데이터
+                    (index + 1) + "번 노선", // 노선 이름
+                    linkDataList,           // 경로 데이터
+                    busStopDataList         // 정류장 데이터
             );
 
             routeDataList.add(routeData);
