@@ -12,6 +12,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.mysql.cj.conf.PropertyKey.logger;
+
 @Service
 @RequiredArgsConstructor
 public class RouteService {
@@ -21,6 +23,9 @@ public class RouteService {
     private final LinkRepository linkRepository;
     private final LinkVertexRepository linkVertexRepository;
     private final BusStopRepository busStopRepository;
+
+
+
 
     public List<RouteData> getOptimizedRouteData() {
         // 1. 상위 10개 노선 ID 조회
@@ -90,5 +95,19 @@ public class RouteService {
         }
 
         return routeDataList;
+    }
+
+    // 정류장 정보 조회
+    public List<BusStopDTO> getBusStops(String routeId) {
+        List<BusStopDTO> busStops = routeRepository.findBusStopsByRouteId(routeId);
+        return busStops;
+    }
+
+
+
+    // 노선에 있는 모든 버텍스 조회
+    public List<VertexDTO> getRouteVertexes(String routeId) {
+        List<VertexDTO> vertexes = routeRepository.findVertexesByRouteId(routeId);
+        return vertexes;
     }
 }
