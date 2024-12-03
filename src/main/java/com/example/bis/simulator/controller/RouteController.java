@@ -1,8 +1,10 @@
 package com.example.bis.simulator.controller;
 
+import com.example.bis.simulator.dto.BusLocationDTO;
 import com.example.bis.simulator.dto.BusStopDTO;
 import com.example.bis.simulator.dto.RouteData;
 import com.example.bis.simulator.dto.VertexDTO;
+import com.example.bis.simulator.service.BusRungService;
 import com.example.bis.simulator.service.RouteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +18,11 @@ import java.util.List;
 public class RouteController {
 
     private final RouteService routeService;
+    private final BusRungService busRungService;
 
-    public RouteController(RouteService routeService) {
+    public RouteController(RouteService routeService, BusRungService busRungService) {
         this.routeService = routeService;
+        this.busRungService = busRungService;
     }
 
     @GetMapping("/top10") //"최적화된 상위 10개 경로 조회", description = "최적화된 경로 데이터를 상위 10개 반환합니다.")
@@ -60,5 +64,9 @@ public class RouteController {
         }
     }
 
-
+    // 노선의 운행중인 시뮬레이터의 OBU_ID, PASG_POINT_SQNO 조회
+    @GetMapping("/{routeId}/buses/stops")
+    public List<BusLocationDTO> getBusRunsByRouteId(@PathVariable String routeId) {
+        return busRungService.getObuAndPassagePointIds(routeId);
+    }
 }

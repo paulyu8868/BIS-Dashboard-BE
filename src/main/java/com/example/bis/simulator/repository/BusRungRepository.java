@@ -1,6 +1,7 @@
 package com.example.bis.simulator.repository;
 
 import com.example.bis.simulator.model.C_TC_BUS_RUNG;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,4 +10,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface BusRungRepository extends JpaRepository<C_TC_BUS_RUNG, String> {
+    List<C_TC_BUS_RUNG> findByRouteIdAndRungStatus(String routeId, String rungStatus);
 }
