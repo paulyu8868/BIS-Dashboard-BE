@@ -2,175 +2,176 @@ package com.example.bis.simulator.service;
 
 import com.example.bis.simulator.dto.BusDataResponse;
 import com.example.bis.simulator.dto.BusSimulationResponse;
-import com.example.bis.simulator.dto.RouteData;
+import com.example.bis.simulator.dto.VertexDTO;
 import com.example.bis.simulator.model.C_TC_BUS_RUNG;
-import com.example.bis.simulator.model.M_OP_BUS;
-import com.example.bis.simulator.model.M_OP_OBU;
-import com.example.bis.simulator.model.M_TP_BSTP;
-import com.example.bis.simulator.repository.*;
+import com.example.bis.simulator.repository.BusRungRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
-/**
- * 버스 시뮬레이터 서비스 클래스.
- */
 @Service
 @RequiredArgsConstructor
 public class BusSimulatorService {
 
-    private final BusRepository busRepository;
-    private final ObuRepository obuRepository;
-    private final BusStopRepository busStopRepository;
     private final BusRungRepository busRungRepository;
     private final RouteService routeService;
 
-    /**
-     * 상위 10개의 버스를 조회합니다.
-     */
-    public List<BusDataResponse> getTopBuses() {
-        List<M_OP_BUS> buses = busRepository.findAll(PageRequest.of(0, 10)).getContent();
-        return buses.stream()
-                .map(bus -> {
-                    M_OP_OBU obu = obuRepository.findByBusId(bus.getBusId());
-                    return new BusDataResponse(
-                            bus.getBusId(),
-                            bus.getBusNo(),
-                            obu != null ? obu.getObuId() : null
-                    );
-                })
-                .collect(Collectors.toList());
-    }
+    @Value("${simulator.update.interval:5000}")
+    private long updateInterval;
 
     /**
-     * 특정 OBU ID와 노선으로 시뮬레이터를 시작합니다.
+     * 특정 노선에 해당하는 버스 데이터를 조회
      *
-     * @param busId 버스 ID
      * @param routeId 노선 ID
+     * @return 버스 데이터 리스트
      */
-    public void startSimulation(String busId, String routeId) {
-        if (busId == null || routeId == null) {
-            throw new IllegalArgumentException("버스 ID와 노선 ID는 필수입니다.");
-        }
-
-        List<RouteData> routes = routeService.getOptimizedRouteData();
-        RouteData selectedRoute = routes.stream()
-                .filter(route -> route.getRouteId().equals(routeId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("해당 노선을 찾을 수 없습니다: " + routeId));
-
-        M_OP_OBU obu = obuRepository.findByBusId(Integer.parseInt(busId));
-        if (obu == null) {
-            throw new IllegalArgumentException("해당 버스를 찾을 수 없습니다: " + busId);
-        }
-
-        BigDecimal initialX = selectedRoute.getBusStops().get(0).getXcord();
-        BigDecimal initialY = selectedRoute.getBusStops().get(0).getYcord();
-        String arrivalPointId = selectedRoute.getBusStops().get(0).getBusStopId();
-
-        initializeBusPosition(obu.getObuId(), initialX, initialY, arrivalPointId);
-    }
-
-
-    /**
-     * 특정 OBU ID의 버스를 초기화합니다.
-     */
-    public BusSimulationResponse initializeBusPosition(String obuId, BigDecimal xCord, BigDecimal yCord, String arrivalPointId) {
-        busRungRepository.deleteById(obuId);
-
-        C_TC_BUS_RUNG busData = new C_TC_BUS_RUNG();
-        busData.setObuId(obuId);
-        busData.setXCord(xCord);
-        busData.setYCord(yCord);
-        busData.setArrivalPlannedPointId(arrivalPointId);
-        busData.setPointPassageDate(LocalDateTime.now());
-        busData.setBusLocationDivision("01");
-
-        busRungRepository.save(busData);
-        return mapToSimulationResponse(busData);
+    public List<BusDataResponse> getBusesByRouteId(String routeId) {
+        return busRungRepository.findBusDetailsByRouteId(routeId);
     }
 
     /**
-     * 모든 버스를 초기화합니다.
+     * 특정 노선에 해당하는 실시간 버스 위치 데이터 조회
+     *
+     * @param routeId 노선 ID
+     * @return 실시간 위치 데이터 리스트
      */
-    public void initializeAllBuses(List<String> obuIds) {
-        List<RouteData> routes = routeService.getOptimizedRouteData();
-
-        for (int i = 0; i < obuIds.size(); i++) {
-            String obuId = obuIds.get(i);
-            RouteData route = routes.get(i % routes.size());
-
-            BigDecimal initialX = route.getBusStops().get(0).getXcord();
-            BigDecimal initialY = route.getBusStops().get(0).getYcord();
-            String arrivalPointId = route.getBusStops().get(0).getBusStopId();
-
-            initializeBusPosition(obuId, initialX, initialY, arrivalPointId);
-        }
+    public List<BusSimulationResponse> getBusLocationsByRouteId(String routeId) {
+        return busRungRepository.findBusLocationsByRouteId(routeId);
     }
 
     /**
-     * 모든 버스를 5초마다 갱신합니다.
+     * 시뮬레이터 시작: 특정 OBU ID의 상태를 활성화(1)로 설정
+     *
+     * @param obuId OBU ID
      */
-    @Scheduled(fixedRate = 5000)
-    public void updateAllSimulations() {
-        List<C_TC_BUS_RUNG> buses = busRungRepository.findAll();
-        for (C_TC_BUS_RUNG bus : buses) {
-            updateSimulation(bus.getObuId());
-        }
+    @Transactional
+    public void startSimulation(String obuId) {
+        busRungRepository.updateBusStatus(obuId);
     }
 
     /**
-     * 특정 OBU ID의 상태를 갱신합니다.
+     * 5초마다 버스 위치를 업데이트
      */
-    public BusSimulationResponse updateSimulation(String obuId) {
-        C_TC_BUS_RUNG busData = busRungRepository.findById(obuId)
-                .orElseThrow(() -> new RuntimeException("해당 OBU ID의 데이터가 존재하지 않습니다."));
+    @Scheduled(fixedRateString = "${simulator.update.interval:5000}")
+    public void updateBusPositions() {
+        List<C_TC_BUS_RUNG> buses = busRungRepository.findByRungStatus("1");
+        if (buses.isEmpty()) return;
 
-        BigDecimal oldX = busData.getXCord();
-        BigDecimal oldY = busData.getYCord();
-        BigDecimal newX = oldX.add(BigDecimal.valueOf(0.0001));
-        BigDecimal newY = oldY.add(BigDecimal.valueOf(0.0001));
+        buses.forEach(bus -> {
+            // 노선 경로(Vertex) 데이터 가져오기
+            List<VertexDTO> vertices = routeService.getRouteVertexes(bus.getRouteId());
+            if (vertices.isEmpty()) return;
 
-        busData.setXCord(newX);
-        busData.setYCord(newY);
+            // 현재 좌표
+            BigDecimal currentX = bus.getXCord();
+            BigDecimal currentY = bus.getYCord();
 
-        M_TP_BSTP arrivalStop = busStopRepository.findByBstpIds(List.of(busData.getArrivalPlannedPointId())).get(0);
-        BigDecimal distance = calculateDistance(newX, newY, arrivalStop.getXcord(), arrivalStop.getYcord());
+            // 현재 노드(Vertex) 인덱스 찾기
+            int currentIndex = findCurrentVertexIndex(vertices, currentX, currentY);
+            if (currentIndex < 0 || currentIndex >= vertices.size() - 1) return;
 
-        if (distance.compareTo(BigDecimal.valueOf(arrivalStop.getEntJdgDist())) < 0) {
-            busData.setBusLocationDivision("02");
-        } else if (distance.compareTo(BigDecimal.valueOf(arrivalStop.getExtJdgDist())) > 0) {
-            busData.setBusLocationDivision("03");
-        } else {
-            busData.setBusLocationDivision("01");
+            // 다음 노드(Vertex)로 이동
+            VertexDTO nextVertex = vertices.get(currentIndex + 1);
+            double distance = calculateGeographicalDistance(currentY, currentX, nextVertex.getYcord(), nextVertex.getXcord());
+            double speed = calculateSpeed(distance);
+
+            // 상태 업데이트
+            String busLocationDivision = determineBusLocation(bus, nextVertex, distance);
+
+            // 버스 데이터 갱신
+            bus.setXCord(nextVertex.getXcord());
+            bus.setYCord(nextVertex.getYcord());
+            bus.setMomentSpeed(BigDecimal.valueOf(speed));
+            bus.setPointPassageDate(LocalDateTime.now());
+            bus.setBusLocationDivision(busLocationDivision);
+        });
+
+        // 모든 버스 데이터 저장
+        busRungRepository.saveAll(buses);
+    }
+
+    /**
+     * Haversine Formula를 사용한 지리적 거리 계산 (미터 단위)
+     *
+     * @param lat1 현재 Y좌표 (위도)
+     * @param lon1 현재 X좌표 (경도)
+     * @param lat2 다음 Y좌표 (위도)
+     * @param lon2 다음 X좌표 (경도)
+     * @return 거리 (미터)
+     */
+    private double calculateGeographicalDistance(BigDecimal lat1, BigDecimal lon1, BigDecimal lat2, BigDecimal lon2) {
+        final double R = 6371e3; // 지구 반지름 (미터)
+        double phi1 = Math.toRadians(lat1.doubleValue());
+        double phi2 = Math.toRadians(lat2.doubleValue());
+        double deltaPhi = Math.toRadians(lat2.subtract(lat1).doubleValue());
+        double deltaLambda = Math.toRadians(lon2.subtract(lon1).doubleValue());
+
+        double a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2)
+                + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c;
+    }
+
+    /**
+     * 이동 속도 계산 (km/h 단위)
+     *
+     * @param distance 이동 거리 (미터)
+     * @return 속도 (km/h)
+     */
+    private double calculateSpeed(double distance) {
+        return (distance / (updateInterval / 1000)) * 3.6; // m/s -> km/h 변환
+    }
+
+    /**
+     * 현재 좌표와 가장 가까운 Vertex의 인덱스 반환
+     *
+     * @param vertices   노선 경로(Vertex) 리스트
+     * @param currentX   현재 X 좌표
+     * @param currentY   현재 Y 좌표
+     * @return Vertex 인덱스 (없으면 -1)
+     */
+    private int findCurrentVertexIndex(List<VertexDTO> vertices, BigDecimal currentX, BigDecimal currentY) {
+        for (int i = 0; i < vertices.size(); i++) {
+            VertexDTO vertex = vertices.get(i);
+            if (isCloseEnough(vertex.getXcord(), currentX) && isCloseEnough(vertex.getYcord(), currentY)) {
+                return i;
+            }
         }
-
-        busRungRepository.save(busData);
-        return mapToSimulationResponse(busData);
+        return -1;
     }
 
-    private BigDecimal calculateDistance(BigDecimal x1, BigDecimal y1, BigDecimal x2, BigDecimal y2) {
-        return BigDecimal.valueOf(Math.sqrt(Math.pow(x1.subtract(x2).doubleValue(), 2) + Math.pow(y1.subtract(y2).doubleValue(), 2)));
+    /**
+     * 근사값 비교
+     *
+     * @param a 첫 번째 값
+     * @param b 두 번째 값
+     * @return 근사값 여부
+     */
+    private boolean isCloseEnough(BigDecimal a, BigDecimal b) {
+        return a.subtract(b).abs().doubleValue() < 0.0001;
     }
 
-    private BusSimulationResponse mapToSimulationResponse(C_TC_BUS_RUNG busData) {
-        return new BusSimulationResponse(
-                busData.getObuId(),
-                busData.getXCord(),
-                busData.getYCord(),
-                busData.getMomentSpeed(),
-                busData.getPassagePointId(),
-                busData.getPassagePointSqNo(),
-                busData.getPointPassageDate(),
-                busData.getArrivalPlannedPointId(),
-                busData.getArrivalPlannedPointSqNo(),
-                busData.getBusLocationDivision()
-        );
+    /**
+     * 버스의 상태 결정 (진입/진출/정주기)
+     *
+     * @param bus        현재 버스 데이터
+     * @param nextVertex 다음 Vertex 데이터
+     * @param distance   두 좌표 간 거리
+     * @return 상태 코드 ("01", "02", "03")
+     */
+    private String determineBusLocation(C_TC_BUS_RUNG bus, VertexDTO nextVertex, double distance) {
+        if (distance < 10) {
+            return "02"; // 진입
+        } else if (distance > 20) {
+            return "03"; // 진출
+        }
+        return "01"; // 정주기
     }
 }

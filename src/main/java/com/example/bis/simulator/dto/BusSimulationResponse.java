@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BusSimulationResponse {
     private String obuId;               // OBU ID
+    private String routeId;
     private BigDecimal xCord;           // X 좌표
     private BigDecimal yCord;           // Y 좌표
     private BigDecimal momentSpeed;     // 순간 속도
