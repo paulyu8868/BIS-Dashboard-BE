@@ -51,8 +51,11 @@ public class BusSimulatorService {
      * @param obuId OBU ID
      */
     @Transactional
-    public void startSimulation(String obuId) {
+    public void startSimulation(String obuId, VertexDTO initialVertex) {
+        System.out.println("BusSimulatorService.startSimulation");
         busRungRepository.updateBusStatus(obuId);
+        busRungRepository.updateInitialLocation(obuId, initialVertex.getXcord(), initialVertex.getYcord()); // 추가. 시뮬레이터 시작하면 초기위치로 설정
+        System.out.println("초기 위치로 설정 완료");
     }
 
     /**
@@ -60,7 +63,9 @@ public class BusSimulatorService {
      */
     @Scheduled(fixedRateString = "${simulator.update.interval:5000}")
     public void updateBusPositions() {
+        System.out.println("BusSimulatorService.updateBusPositions");
         List<C_TC_BUS_RUNG> buses = busRungRepository.findByRungStatus("1");
+        System.out.println("buses = " + buses);
         if (buses.isEmpty()) return;
 
         buses.forEach(bus -> {
@@ -84,7 +89,6 @@ public class BusSimulatorService {
             // 상태 업데이트
             String busLocationDivision = determineBusLocation(bus, nextVertex, distance);
 
-            // 버스 데이터 갱신
             bus.setXCord(nextVertex.getXcord());
             bus.setYCord(nextVertex.getYcord());
             bus.setMomentSpeed(BigDecimal.valueOf(speed));
