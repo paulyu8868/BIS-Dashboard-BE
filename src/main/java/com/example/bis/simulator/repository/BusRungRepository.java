@@ -64,6 +64,14 @@ public interface BusRungRepository extends JpaRepository<C_TC_BUS_RUNG, String> 
     """)
     void updateBusStatus(String obuId);
 
+    @Modifying
+    @Query("""
+        UPDATE C_TC_BUS_RUNG
+        SET rungStatus = '0'
+        WHERE obuId = :obuId
+    """)
+    void updateBusNotRun(String obuId);
+
     /**
      * 상태에 해당하는 모든 버스 조회
      */

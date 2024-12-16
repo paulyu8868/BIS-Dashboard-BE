@@ -5,6 +5,7 @@ import com.example.bis.simulator.dto.BusSimulationResponse;
 import com.example.bis.simulator.dto.VertexDTO;
 import com.example.bis.simulator.model.C_TC_BUS_RUNG;
 import com.example.bis.simulator.repository.BusRungRepository;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -53,8 +54,9 @@ public class BusSimulatorService {
     @Transactional
     public void startSimulation(String obuId, VertexDTO initialVertex) {
         System.out.println("BusSimulatorService.startSimulation");
-        busRungRepository.updateBusStatus(obuId);
+        busRungRepository.updateBusNotRun(obuId);
         busRungRepository.updateInitialLocation(obuId, initialVertex.getXcord(), initialVertex.getYcord()); // 추가. 시뮬레이터 시작하면 초기위치로 설정
+        busRungRepository.updateBusStatus(obuId);
         System.out.println("초기 위치로 설정 완료");
     }
 
@@ -65,7 +67,7 @@ public class BusSimulatorService {
     public void updateBusPositions() {
         System.out.println("BusSimulatorService.updateBusPositions");
         List<C_TC_BUS_RUNG> buses = busRungRepository.findByRungStatus("1");
-        System.out.println("buses = " + buses);
+        List<C_TC_BUS_RUNG> updateBuses = new ArrayList<>();
         if (buses.isEmpty()) return;
 
         buses.forEach(bus -> {
@@ -89,15 +91,19 @@ public class BusSimulatorService {
             // 상태 업데이트
             String busLocationDivision = determineBusLocation(bus, nextVertex, distance);
 
-            bus.setXCord(nextVertex.getXcord());
-            bus.setYCord(nextVertex.getYcord());
-            bus.setMomentSpeed(BigDecimal.valueOf(speed));
-            bus.setPointPassageDate(LocalDateTime.now());
-            bus.setBusLocationDivision(busLocationDivision);
+            if (bus.getRungStatus().equals("1")) {
+                bus.setXCord(nextVertex.getXcord());
+                bus.setYCord(nextVertex.getYcord());
+                bus.setMomentSpeed(BigDecimal.valueOf(speed));
+                bus.setPointPassageDate(LocalDateTime.now());
+                bus.setBusLocationDivision(busLocationDivision);
+
+                updateBuses.add(bus);
+            }
         });
 
         // 모든 버스 데이터 저장
-        busRungRepository.saveAll(buses);
+        busRungRepository.saveAll(updateBuses);
     }
 
     /**

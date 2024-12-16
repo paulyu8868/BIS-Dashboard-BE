@@ -54,6 +54,7 @@ public class BusSimulatorController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("노선 경로 또는 정류장 정보가 없습니다.");
             }
 
+            System.out.println("vertices.get(0): = " + vertices.get(0));
             busSimulatorService.startSimulation(obuId, vertices.get(0)); // 초기 위치로 초기화
 
             return ResponseEntity.ok(Map.of(
