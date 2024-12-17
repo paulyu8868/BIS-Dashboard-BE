@@ -2,10 +2,13 @@ package com.example.bis.simulator.repository;
 
 import com.example.bis.simulator.dto.BusDataResponse;
 import com.example.bis.simulator.dto.BusSimulationResponse;
+import com.example.bis.simulator.dto.VertexDTO;
 import com.example.bis.simulator.model.C_TC_BUS_RUNG;
+import java.math.BigDecimal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -61,6 +64,14 @@ public interface BusRungRepository extends JpaRepository<C_TC_BUS_RUNG, String> 
     """)
     void updateBusStatus(String obuId);
 
+    @Modifying
+    @Query("""
+        UPDATE C_TC_BUS_RUNG
+        SET rungStatus = '0'
+        WHERE obuId = :obuId
+    """)
+    void updateBusNotRun(String obuId);
+
     /**
      * 상태에 해당하는 모든 버스 조회
      */
@@ -80,4 +91,11 @@ public interface BusRungRepository extends JpaRepository<C_TC_BUS_RUNG, String> 
         WHERE busRung.obuId = :obuId
     """)
     List<Object[]> findBusCoordinatesByObuId(String obuId);
+
+    @Modifying
+    @Query("UPDATE C_TC_BUS_RUNG r SET r.xCord = :xcord, r.yCord = :ycord WHERE r.obuId = :obuId")
+    void updateInitialLocation(@Param("obuId") String obuId,
+                               @Param("xcord") BigDecimal xcord,
+                               @Param("ycord") BigDecimal ycord);
+
 }
