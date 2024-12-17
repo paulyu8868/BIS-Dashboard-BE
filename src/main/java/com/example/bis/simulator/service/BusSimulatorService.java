@@ -20,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BusSimulatorService {
 
+    private volatile boolean simulationRunning = true; // 업데이트 플래그
     private final BusRungRepository busRungRepository;
     private final RouteService routeService;
 
@@ -53,8 +54,7 @@ public class BusSimulatorService {
      */
     @Transactional
     public void startSimulation(String obuId, VertexDTO initialVertex) {
-        System.out.println("BusSimulatorService.startSimulation");
-        busRungRepository.updateBusNotRun(obuId);
+        simulationRunning = false;
         busRungRepository.updateInitialLocation(obuId, initialVertex.getXcord(), initialVertex.getYcord()); // 추가. 시뮬레이터 시작하면 초기위치로 설정
         busRungRepository.updateBusStatus(obuId);
         System.out.println("초기 위치로 설정 완료");
@@ -65,7 +65,7 @@ public class BusSimulatorService {
      */
     @Scheduled(fixedRateString = "${simulator.update.interval:5000}")
     public void updateBusPositions() {
-        System.out.println("BusSimulatorService.updateBusPositions");
+        simulationRunning = true;
         List<C_TC_BUS_RUNG> buses = busRungRepository.findByRungStatus("1");
         List<C_TC_BUS_RUNG> updateBuses = new ArrayList<>();
         if (buses.isEmpty()) return;
@@ -91,18 +91,18 @@ public class BusSimulatorService {
             // 상태 업데이트
             String busLocationDivision = determineBusLocation(bus, nextVertex, distance);
 
-            if (bus.getRungStatus().equals("1")) {
-                bus.setXCord(nextVertex.getXcord());
-                bus.setYCord(nextVertex.getYcord());
-                bus.setMomentSpeed(BigDecimal.valueOf(speed));
-                bus.setPointPassageDate(LocalDateTime.now());
-                bus.setBusLocationDivision(busLocationDivision);
+            bus.setXCord(nextVertex.getXcord());
+            bus.setYCord(nextVertex.getYcord());
+            bus.setMomentSpeed(BigDecimal.valueOf(speed));
+            bus.setPointPassageDate(LocalDateTime.now());
+            bus.setBusLocationDivision(busLocationDivision);
 
-                updateBuses.add(bus);
-            }
+            updateBuses.add(bus);
         });
 
-        // 모든 버스 데이터 저장
+        if (!simulationRunning) {
+            return;
+        }
         busRungRepository.saveAll(updateBuses);
     }
 
